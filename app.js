@@ -33,7 +33,7 @@ async function scoreAllAssignments() {
   const students = await getStudents('./students.csv');
 
   for(assignment of COURSE.assignments){
-    await scoreSubmission(students, assignment);
+      await scoreSubmission(students, assignment).catch(console.error);
   }
 }
 scoreAllAssignments(); //run it
@@ -53,7 +53,7 @@ async function scoreSubmission(students, assignment){
       console.log("Error accessing Githhub:", JSON.parse(err.message).message);
     })
 
-    if(statuses && statuses.data[0].state === 'success'){
+    if(statuses && statuses.data[0] && statuses.data[0].state === 'success'){
       console.log(`...complete!`)
       await markComplete(student, assignment);
     } else {
