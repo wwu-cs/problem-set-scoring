@@ -41,25 +41,32 @@ scoreAllAssignments(); //run it
 
 //score a single assignment for given students
 async function scoreSubmission(students, assignment){
+  let totalComplete = 0;
   for(student of students) {
     console.log(`Scoring ${assignment.repo_slug} for ${student.display_name}`);
 
-    //get status of pushed code
-    const statuses = await octokit.repos.getStatuses({
+    const checks = await octokit.checks.listForRef({
       owner: COURSE.github_org,
       repo: assignment.repo_slug+'-'+student.github,
-      ref: assignment.branch || 'master' //default to master
+      ref: assignment.branch || 'master', //default to master
+      name: 'Travis CI - Branch', //what seems to be returned...
     }).catch((err) => {
       console.log("Error accessing Githhub:", JSON.parse(err.message).message);
     })
 
-    if(statuses && statuses.data[0] && statuses.data[0].state === 'success'){
-      console.log(`...complete!`)
-      await markComplete(student, assignment);
-    } else {
+    try {
+      if(checks.data.check_runs[0].conclusion === 'success'){
+        console.log(`...complete!`)
+        await markComplete(student, assignment);
+        totalComplete++;
+      } else {
+        console.log(`...INCOMPLETE`);
+      }
+    } catch(err) {
       console.log(`...INCOMPLETE`);
     }
-  }    
+  }
+  console.log(`Complete submissions: ${totalComplete}/${students.length}`)
 }
 
 //Mark a particular student's assignment as complete (100%) in Canvas
